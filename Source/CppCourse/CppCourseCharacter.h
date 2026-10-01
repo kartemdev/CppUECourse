@@ -32,6 +32,8 @@ class ACppCourseCharacter : public ACharacter
 	UCameraComponent* FollowCamera;
 	
 protected:
+	FTimerHandle SprintTimerHandle;
+	FTimerHandle CooldownSprintTimerHandle;
 
 	/** Jump Input Action */
 	UPROPERTY(EditAnywhere, Category="Input")
@@ -49,6 +51,24 @@ protected:
 	UPROPERTY(EditAnywhere, Category="Input")
 	UInputAction* MouseLookAction;
 
+	UPROPERTY(EditAnywhere, Category="Input")
+	UInputAction* SprintAction;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Movement")
+	float NormalSpeed = 500.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float SprintSpeed = 25000.f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float SprintDuration = .6f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Movement")
+	float CooldownSprintDuration = 2.0f;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Movement")
+	bool bCanSprint = true;
+
 public:
 
 	/** Constructor */
@@ -60,6 +80,11 @@ protected:
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
 protected:
+	void StartSprint();
+
+	void StopSprint();
+
+	void ResetSprintCooldown();
 
 	/** Called for movement input */
 	void Move(const FInputActionValue& Value);
@@ -84,6 +109,9 @@ public:
 	/** Handles jump pressed inputs from either controls or UI interfaces */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoJumpEnd();
+
+	UFUNCTION(BlueprintPure, Category="Movement")
+	float GetSprintCooldownSprintPercentage() const;
 
 public:
 
