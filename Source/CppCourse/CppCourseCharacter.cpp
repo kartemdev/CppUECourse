@@ -28,9 +28,9 @@ ACppCourseCharacter::ACppCourseCharacter()
 
 	// Note: For faster iteration times these variables, and many more, can be tweaked in the Character Blueprint
 	// instead of recompiling to adjust them
-	GetCharacterMovement()->JumpZVelocity = 500.f;
+	GetCharacterMovement()->JumpZVelocity = 1000.f;
 	GetCharacterMovement()->AirControl = 0.35f;
-	GetCharacterMovement()->MaxWalkSpeed = 500.f;
+	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
 	GetCharacterMovement()->MinAnalogWalkSpeed = 20.f;
 	GetCharacterMovement()->BrakingDecelerationWalking = 2000.f;
 	GetCharacterMovement()->BrakingDecelerationFalling = 1500.0f;
@@ -62,6 +62,7 @@ void ACppCourseCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		// Moving
 		EnhancedInputComponent->BindAction(MoveAction, ETriggerEvent::Triggered, this, &ACppCourseCharacter::Move);
 		EnhancedInputComponent->BindAction(MouseLookAction, ETriggerEvent::Triggered, this, &ACppCourseCharacter::Look);
+		EnhancedInputComponent->BindAction(SprintAction, ETriggerEvent::Started, this, &ACppCourseCharacter::StartSprint);
 
 		// Looking
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &ACppCourseCharacter::Look);
@@ -131,3 +132,64 @@ void ACppCourseCharacter::DoJumpEnd()
 	// signal the character to stop jumping
 	StopJumping();
 }
+
+void ACppCourseCharacter::StopSprint()
+{
+	GetCharacterMovement()->MaxWalkSpeed = NormalSpeed;
+
+	if (GetWorld())
+	{
+		GetWorld()->GetTimerManager().ClearTimer(SprintTimerHandle);
+
+		GetWorld()->GetTimerManager().SetTimer(
+			CooldownSprintTimerHandle,
+			this,
+			&ACppCourseCharacter::ResetSprintCooldown,
+			CooldownSprintDuration,
+			false
+		);
+	}
+}
+
+void ACppCourseCharacter::StartSprint()
+{
+	if (bCanSprint && GetWorld() && !GetWorld()->GetTimerManager().IsTimerActive(SprintTimerHandle))
+	{
+		bCanSprint = false;
+
+		GetCharacterMovement()->MaxWalkSpeed = SprintSpeed;
+
+		GetWorld()->GetTimerManager().SetTimer(
+			SprintTimerHandle,
+			this,
+			&ACppCourseCharacter::StopSprint,
+			SprintDuration,
+			false
+		);
+	}
+}
+
+void ACppCourseCharacter::ResetSprintCooldown()
+{
+	bCanSprint = true;
+}
+
+float ACppCourseCharacter::GetSprintCooldownSprintPercentage() const
+{
+	if (bCanSprint)
+	{
+		return 1.0f;
+	}
+
+	if (GetWorld())
+	{
+		float RemainingTime = GetWorld()->GetTimerManager().GetTimerRemaining(CooldownSprintTimerHandle);
+
+
+		return 1.0f - (RemainingTime / CooldownSprintDuration);
+	}
+
+	return 0.0f;
+}
+
+
